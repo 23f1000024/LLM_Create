@@ -8,6 +8,7 @@ import com.unop2p.app.net.WebRtcManager
 import com.unop2p.engine.game.CardColor
 import com.unop2p.engine.game.PublicGameState
 import com.unop2p.engine.protocol.GameMessage
+import com.unop2p.engine.protocol.IceServer
 import com.unop2p.engine.protocol.LobbyUpdate
 import com.unop2p.engine.protocol.Offer
 import com.unop2p.engine.protocol.Answer
@@ -41,7 +42,14 @@ class ClientController(
 
     private var myPlayerId: String = ""
     private var hostPlayerId: String = ""
+    private var token: String = ""
     private var helloSent = false
+
+    // Stored so we can transparently reconnect to the same seat after a drop.
+    private var wsUrl: String = ""
+    private var iceServers: List<IceServer> = emptyList()
+    private var intentionalLeave = false
+    private var reconnecting = false
 
     private val _status = MutableStateFlow(ConnectionStatus.IDLE)
     val status: StateFlow<ConnectionStatus> = _status.asStateFlow()
@@ -80,37 +88,83 @@ class ClientController(
     suspend fun connect(host: String, port: Int, roomCode: String) {
         _status.value = ConnectionStatus.JOINING
         val baseUrl = "http://$host:$port"
-        val wsUrl = "ws://$host:$port"
+        wsUrl = "ws://$host:$port"
         val accepted = signaling.join(baseUrl, roomCode, displayName)
         myPlayerId = accepted.playerId
         hostPlayerId = accepted.hostPlayerId
+        token = accepted.token
+        iceServers = accepted.iceServers
 
-        webrtc = WebRtcManager(
-            context = context,
-            myPlayerId = myPlayerId,
-            iceServers = accepted.iceServers,
-            signalSender = { msg -> signaling.send(msg) },
-            onGameMessage = { from, msg -> if (from == hostPlayerId) session?.onMessage(msg) },
-            onPeerState = { st -> onPeerState(st) },
-        )
+        buildTransport()
         session = ClientSession(
             myPlayerId = myPlayerId,
-            token = accepted.token,
+            token = token,
             channel = object : ClientDataChannel {
                 override fun sendToHost(message: GameMessage) { webrtc?.sendTo(hostPlayerId, message) }
             },
             listener = listener,
         )
-        _status.value = ConnectionStatus.NEGOTIATING
+        openSignalingWs()
+        AppLog.i(AppLog.Area.ROOM, "Joined room $roomCode as $myPlayerId")
+    }
 
+    /** (Re)creates the WebRTC mesh manager, keeping the same seat identity. */
+    private fun buildTransport() {
+        webrtc?.close()
+        helloSent = false
+        webrtc = WebRtcManager(
+            context = context,
+            myPlayerId = myPlayerId,
+            iceServers = iceServers,
+            signalSender = { msg -> signaling.send(msg) },
+            onGameMessage = { from, msg -> if (from == hostPlayerId) session?.onMessage(msg) },
+            onPeerState = { st -> onPeerState(st) },
+        )
+    }
+
+    private suspend fun openSignalingWs() {
+        _status.value = ConnectionStatus.NEGOTIATING
         signaling.connect(
             wsUrl = wsUrl,
             playerId = myPlayerId,
-            token = accepted.token,
+            token = token,
             onMessage = { msg -> handleSignal(msg) },
-            onClosed = { if (_status.value != ConnectionStatus.ENDED) _status.value = ConnectionStatus.FAILED },
+            onClosed = { onWsClosed() },
         )
-        AppLog.i(AppLog.Area.ROOM, "Joined room $roomCode as $myPlayerId")
+    }
+
+    private fun onWsClosed() {
+        if (intentionalLeave || _status.value == ConnectionStatus.ENDED) return
+        if (reconnecting) return
+        reconnecting = true
+        _status.value = ConnectionStatus.FAILED
+        scope.launch { reconnectLoop() }
+    }
+
+    /**
+     * Best-effort transparent reconnection to the same seat. The host keeps the
+     * seat (token) while we are away; on re-open we rebuild WebRTC and the client
+     * session re-sends Hello, then requests a full state snapshot to resync.
+     */
+    private suspend fun reconnectLoop() {
+        var attempt = 0
+        while (!intentionalLeave && attempt < MAX_RECONNECT_ATTEMPTS && _status.value != ConnectionStatus.ENDED) {
+            attempt++
+            val backoff = (1000L * attempt).coerceAtMost(8000L)
+            AppLog.w(AppLog.Area.ROOM, "Reconnect attempt $attempt in ${backoff}ms")
+            kotlinx.coroutines.delay(backoff)
+            val ok = runCatching {
+                buildTransport()
+                openSignalingWs()
+            }.isSuccess
+            if (ok) {
+                // Give the data channel a moment; if Hello lands, resync explicitly.
+                kotlinx.coroutines.delay(2500)
+                if (helloSent) { session?.requestState(); reconnecting = false; return }
+            }
+        }
+        reconnecting = false
+        if (_status.value != ConnectionStatus.ENDED) _error.value = "Lost connection to the host"
     }
 
     private fun handleSignal(message: com.unop2p.engine.protocol.SignalMessage) {
@@ -148,6 +202,7 @@ class ClientController(
     fun setMicEnabled(enabled: Boolean) = webrtc?.setMicEnabled(enabled)
 
     suspend fun disconnect() {
+        intentionalLeave = true
         signaling.close()
         webrtc?.close()
         webrtc = null
@@ -156,4 +211,6 @@ class ClientController(
     }
 
     fun clearError() { _error.value = null }
+
+    companion object { private const val MAX_RECONNECT_ATTEMPTS = 5 }
 }

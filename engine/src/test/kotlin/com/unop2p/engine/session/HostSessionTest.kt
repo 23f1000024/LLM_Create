@@ -132,6 +132,30 @@ class HostSessionTest {
     }
 
     @Test
+    fun `a disconnect marks the player and is visible to other clients`() {
+        val net = newNet()
+        val p2 = net.addClient("p2", "tok2")
+        net.addClient("p3", "tok3")
+        net.host.addPlayer("p2", "Sam", "tok2")
+        net.host.addPlayer("p3", "Rahul", "tok3")
+        net.clients["p2"]!!.connect()
+        net.clients["p3"]!!.connect()
+        net.host.startGame().getOrThrow()
+
+        net.host.markConnected("p3", false)
+
+        // p2's snapshot shows p3 as disconnected; the seat (and its cards) are kept.
+        val p3AsSeenByP2 = p2.latestState!!.players.first { it.playerId == "p3" }
+        assertEquals(com.unop2p.engine.game.ConnectionState.DISCONNECTED, p3AsSeenByP2.connectionState)
+        assertEquals(7, p3AsSeenByP2.handCount)
+
+        // Reconnect restores the seat as CONNECTED.
+        net.host.markConnected("p3", true)
+        val p3Back = p2.latestState!!.players.first { it.playerId == "p3" }
+        assertEquals(com.unop2p.engine.game.ConnectionState.CONNECTED, p3Back.connectionState)
+    }
+
+    @Test
     fun `reconnect via RequestState resends the current snapshot`() {
         val net = newNet()
         val p2 = net.addClient("p2", "tok2")
