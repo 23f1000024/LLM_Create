@@ -1,5 +1,7 @@
 # UNO P2P — Serverless Multiplayer UNO for Android (with Voice)
 
+![Android CI](https://github.com/23f1000024/LLM_Create/actions/workflows/android.yml/badge.svg?branch=claude/p2p-uno-game-android-wysth6)
+
 A native Android UNO-style card game where **one player's phone is the host**.
 The host provides *temporary* local signaling only to bootstrap **direct WebRTC**
 connections; after that, **all game data and voice run peer-to-peer**. There is
@@ -35,6 +37,19 @@ covering deck/legality/turn-order/action cards/wild+WD4 challenge/reshuffle/win/
 UNO/invalid+duplicate actions, plus an in-memory transport that drives a real
 host↔clients round through the actual JSON codec to verify host authority,
 private-hand redaction, and reconnect resync.
+
+## Get the APK without building
+
+Every push runs **GitHub Actions** (`.github/workflows/android.yml`), which runs
+the engine tests and builds the debug APK on a runner where Google Maven is
+reachable. To grab the ready-made APK:
+
+1. Open the repo's **Actions** tab → the latest green **Android CI** run.
+2. Under **Artifacts**, download **`uno-p2p-debug-apk`** and unzip it.
+3. Install on a phone: `adb install -r app-debug.apk` (or tap the file on-device
+   with "install from unknown sources" enabled).
+
+You can also trigger a build yourself from the Actions tab (**Run workflow**).
 
 ## Build & run
 
