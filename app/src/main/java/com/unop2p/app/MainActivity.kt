@@ -60,7 +60,7 @@ private fun AppNav(vm: AppViewModel) {
         )
         Route.Create -> CreateScreen(
             nickname = vm.nickname,
-            onNickname = vm::setNickname,
+            onNickname = vm::updateNickname,
             onCreate = { max, settings -> vm.createGame(max, settings) },
             onBack = { vm.back() },
         )
@@ -69,7 +69,7 @@ private fun AppNav(vm: AppViewModel) {
         } ?: HomeFallback(vm)
         Route.JoinEntry -> JoinScreen(
             nickname = vm.nickname,
-            onNickname = vm::setNickname,
+            onNickname = vm::updateNickname,
             onScan = { vm.navigate(Route.Scan) },
             onJoin = { target -> vm.joinGame(target) },
             onBack = { vm.back() },
@@ -83,7 +83,7 @@ private fun AppNav(vm: AppViewModel) {
         } ?: HomeFallback(vm)
         Route.LocalSetup -> LocalSetupScreen(onStart = { names -> vm.startLocal(names) }, onBack = { vm.back() })
         Route.LocalGame -> vm.local?.let { LocalGameScreen(controller = it, onExit = { vm.leaveLocal() }) } ?: HomeFallback(vm)
-        Route.Settings -> SettingsScreen(nickname = vm.nickname, onNickname = vm::setNickname, onBack = { vm.back() })
+        Route.Settings -> SettingsScreen(nickname = vm.nickname, onNickname = vm::updateNickname, onBack = { vm.back() })
         Route.Debug -> {
             val host = vm.host
             val client = vm.client

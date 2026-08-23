@@ -58,7 +58,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun back(): Boolean = if (stack.size > 1) { stack.removeAt(stack.lastIndex); true } else false
     fun home() { stack.clear(); stack.add(Route.Home) }
 
-    fun setNickname(value: String) {
+    fun updateNickname(value: String) {
         nickname = value.take(24)
         viewModelScope.launch { prefs.setNickname(nickname) }
     }
