@@ -1,10 +1,17 @@
-# Not Code files
-*.docx
-*.md
-# Ignore virtual environment directory
-venv/
-
-# Ignore directories
-Work/
+# Gradle
+.gradle/
 build/
-dist/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android / IDE
+local.properties
+*.apk
+*.aab
+.cxx/
+.idea/
+*.iml
+captures/
+
+# OS
+.DS_Store
