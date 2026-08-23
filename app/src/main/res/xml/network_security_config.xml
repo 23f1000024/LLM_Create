@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The host's embedded signaling service runs as plain HTTP/WebSocket on the local
+  network (there is no CA on a phone-to-phone LAN). Cleartext is therefore
+  permitted. This affects ONLY the short-lived signaling handshake; the actual
+  game and voice traffic runs over WebRTC, which is always DTLS/SRTP encrypted.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

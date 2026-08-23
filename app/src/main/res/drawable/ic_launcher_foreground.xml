@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A simple white oval "UNO" card mark centered in the adaptive icon safe zone. -->
+    <group
+        android:translateX="30"
+        android:translateY="26">
+        <path
+            android:pathData="M24,4C13,4 4,13 4,28C4,43 13,52 24,52C35,52 44,43 44,28C44,13 35,4 24,4Z"
+            android:fillColor="#FFFFFF" />
+        <path
+            android:pathData="M24,10C16,10 11,17 11,28C11,39 16,46 24,46C32,46 37,39 37,28C37,17 32,10 24,10Z"
+            android:fillColor="#D32F2F" />
+    </group>
+</vector>
