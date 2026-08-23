@@ -10,14 +10,35 @@ object GameRules {
      * Whether [card] may legally be played given the current [state]. This is the
      * single source of truth for card legality and is enforced by the host.
      */
-    fun isPlayable(card: Card, state: GameState): Boolean {
-        val top = state.topCard ?: return true
+    fun isPlayable(card: Card, state: GameState): Boolean = isPlayable(
+        card = card,
+        topCard = state.topCard,
+        activeColor = state.activeColor,
+        pendingDraw = state.pendingDraw,
+        pendingDrawKind = state.pendingDrawKind,
+        allowStacking = state.settings.allowStacking,
+    )
+
+    /**
+     * Param-based legality core, so both the authoritative [GameState] and the
+     * clients' redacted view (which carries the same public fields) can compute
+     * legal moves identically.
+     */
+    fun isPlayable(
+        card: Card,
+        topCard: Card?,
+        activeColor: CardColor?,
+        pendingDraw: Int,
+        pendingDrawKind: CardKind?,
+        allowStacking: Boolean,
+    ): Boolean {
+        val top = topCard ?: return true
 
         // A draw penalty is pending: normally you must draw. Only when stacking is
         // enabled may you play a compatible draw card to pass the penalty on.
-        if (state.pendingDraw > 0) {
-            if (!state.settings.allowStacking) return false
-            return when (state.pendingDrawKind) {
+        if (pendingDraw > 0) {
+            if (!allowStacking) return false
+            return when (pendingDrawKind) {
                 CardKind.DRAW_TWO -> card.kind == CardKind.DRAW_TWO || card.kind == CardKind.WILD_DRAW_FOUR
                 CardKind.WILD_DRAW_FOUR -> card.kind == CardKind.WILD_DRAW_FOUR
                 else -> false
@@ -28,8 +49,7 @@ object GameRules {
         // the optional bluff challenge, not by blocking the play.)
         if (card.kind.isWild) return true
 
-        val active = state.activeColor
-        if (card.color == active) return true
+        if (card.color == activeColor) return true
         if (card.kind == CardKind.NUMBER && top.kind == CardKind.NUMBER && card.number == top.number) return true
         // Symbol match: e.g. Skip on Skip regardless of color.
         if (card.kind != CardKind.NUMBER && card.kind == top.kind) return true
