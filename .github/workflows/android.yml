@@ -80,7 +80,7 @@ jobs:
       # Releases tab without signing in (artifacts require a login). Only from the
       # dev branch, to avoid creating releases from feature branches / PRs.
       - name: Publish APK to a GitHub Release
-        if: github.ref == 'refs/heads/claude/p2p-uno-game-android-wysth6'
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/p2p-uno-game-android-wysth6')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: debug-latest
