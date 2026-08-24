@@ -42,12 +42,16 @@ private-hand redaction, and reconnect resync.
 
 Every push runs **GitHub Actions** (`.github/workflows/android.yml`), which runs
 the engine tests and builds the debug APK on a runner where Google Maven is
-reachable. To grab the ready-made APK:
+reachable, then publishes it.
 
-1. Open the repo's **Actions** tab → the latest green **Android CI** run.
-2. Under **Artifacts**, download **`uno-p2p-debug-apk`** and unzip it.
-3. Install on a phone: `adb install -r app-debug.apk` (or tap the file on-device
-   with "install from unknown sources" enabled).
+**Easiest — from Releases** (no login needed):
+the **[`debug-latest`](../../releases/tag/debug-latest)** pre-release always
+carries the newest **`uno-p2p-debug.apk`**. Download it and install with
+`adb install -r uno-p2p-debug.apk`, or open it on-device with "install from
+unknown sources" enabled.
+
+**Or from the workflow artifact:** Actions tab → latest green **Android CI** run
+→ **Artifacts** → `uno-p2p-debug-apk` (this one is a zip and needs a login).
 
 You can also trigger a build yourself from the Actions tab (**Run workflow**).
 
