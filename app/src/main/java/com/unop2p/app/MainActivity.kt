@@ -83,7 +83,17 @@ private fun AppNav(vm: AppViewModel) {
         } ?: HomeFallback(vm)
         Route.LocalSetup -> LocalSetupScreen(onStart = { names -> vm.startLocal(names) }, onBack = { vm.back() })
         Route.LocalGame -> vm.local?.let { LocalGameScreen(controller = it, onExit = { vm.leaveLocal() }) } ?: HomeFallback(vm)
-        Route.Settings -> SettingsScreen(nickname = vm.nickname, onNickname = vm::updateNickname, onBack = { vm.back() })
+        Route.Settings -> SettingsScreen(
+            nickname = vm.nickname,
+            onNickname = vm::updateNickname,
+            stunEnabled = vm.stunEnabled,
+            onStunEnabled = vm::setStunEnabled,
+            turnUrl = vm.turnUrl,
+            turnUser = vm.turnUser,
+            turnCred = vm.turnCred,
+            onTurn = vm::setTurn,
+            onBack = { vm.back() },
+        )
         Route.Debug -> {
             val host = vm.host
             val client = vm.client

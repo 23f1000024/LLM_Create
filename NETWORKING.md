@@ -108,18 +108,42 @@ should be able to play using only their phones. The host phone provides the
 *temporary* signaling instead of a permanent backend. The trade-off is the
 Internet-NAT limitation above, which we document rather than hide.
 
-## Where STUN/TURN would slot in later
+## STUN / TURN (Internet play)
 
-The architecture already carries an `iceServers: List<IceServer>` field through
-`JoinAccepted` into `PeerConnection.RTCConfiguration`. To add Internet support
-later you would:
+The `iceServers: List<IceServer>` field flows from the host through
+`JoinAccepted` into `PeerConnection.RTCConfiguration`, and each client also
+merges its own device config on top (`ClientController.localIceServers`).
 
-1. Populate `iceServers` with a STUN URL (learn reflexive candidates) and,
-   for hostile NATs, a TURN URL with credentials.
-2. Nothing else in the game or session layer changes — it is transport-agnostic.
+- **STUN is on by default** (public Google STUN — address discovery only, it
+  relays no media). It is harmless on a LAN (local candidates win) and is the
+  minimum needed for any chance of a direct Internet connection. Toggle it in
+  **Settings**.
+- **TURN is optional and user-supplied.** The app ships **no** TURN server (that
+  would be dedicated infrastructure). Behind hostile/symmetric NAT a TURN relay
+  is the only thing that guarantees connectivity — paste your own
+  `turn:host:3478` + username/credential in **Settings → Internet connectivity**.
 
-This is intentionally left unconfigured for v1 so the first release depends on
-**nothing external**.
+### Actually connecting two phones over the Internet — the honest checklist
+
+Even with STUN/TURN, **the host must be reachable for the initial join**, because
+the signaling server lives on the host phone. So Internet play needs, on the
+**host** side, one of:
+
+1. **Router port-forwarding**: forward TCP port `8080` (signaling) to the host
+   phone's LAN IP, and give the joiners the host's **public** IP. Then also
+   configure STUN (default) and ideally a **TURN** relay so the WebRTC media can
+   traverse NAT. Without TURN, media may still fail on symmetric NAT even once
+   signaling succeeds.
+2. **A publicly reachable IPv6** address on the host (some mobile carriers give
+   one). Joiners use `[ipv6]:8080`.
+3. A VPN/overlay (e.g. Tailscale/WireGuard) that puts both phones on one virtual
+   LAN — then it behaves exactly like same-Wi-Fi mode.
+
+If none of these is set up, **Internet joins will fail at the join step** — the
+app now says so explicitly rather than pretending to connect. This is the direct
+consequence of the no-dedicated-server rule: there is no rendezvous point in the
+cloud, so the host itself has to be reachable. LAN remains the primary supported
+mode.
 
 ## Voice topology and scaling
 

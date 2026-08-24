@@ -36,6 +36,8 @@ class ClientController(
     private val context: Context,
     private val scope: CoroutineScope,
     private val displayName: String,
+    /** This device's own STUN/TURN config, merged with whatever the host advertises. */
+    private val localIceServers: List<IceServer> = emptyList(),
 ) {
     private val signaling = SignalingClient(scope)
     private var webrtc: WebRtcManager? = null
@@ -94,7 +96,7 @@ class ClientController(
         myPlayerId = accepted.playerId
         hostPlayerId = accepted.hostPlayerId
         token = accepted.token
-        iceServers = accepted.iceServers
+        iceServers = (accepted.iceServers + localIceServers).distinct()
 
         buildTransport()
         session = ClientSession(

@@ -62,7 +62,8 @@ fun ClientRoomScreen(client: ClientController, onLeave: () -> Unit, onDebug: () 
                     ConnectionStatus.JOINING -> "Contacting host…"
                     ConnectionStatus.NEGOTIATING -> "Establishing direct P2P connection…"
                     ConnectionStatus.CONNECTED -> "Connected — waiting for the host to start."
-                    ConnectionStatus.FAILED -> "Could not connect. The host may be unreachable on this network."
+                    ConnectionStatus.FAILED -> "Could not connect. Make sure both phones are on the SAME Wi-Fi. " +
+                        "Internet play needs the host to be reachable (port-forward / public IPv6) plus STUN/TURN in Settings."
                     ConnectionStatus.ENDED -> "Session ended."
                     ConnectionStatus.IDLE -> "…"
                 },
