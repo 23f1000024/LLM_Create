@@ -72,7 +72,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun iceServers() = IceConfig.build(stunEnabled, turnUrl, turnUser, turnCred)
 
-    fun setStunEnabled(value: Boolean) {
+    fun updateStunEnabled(value: Boolean) {
         stunEnabled = value
         viewModelScope.launch { prefs.setStunEnabled(value) }
     }

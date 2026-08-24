@@ -87,7 +87,7 @@ private fun AppNav(vm: AppViewModel) {
             nickname = vm.nickname,
             onNickname = vm::updateNickname,
             stunEnabled = vm.stunEnabled,
-            onStunEnabled = vm::setStunEnabled,
+            onStunEnabled = vm::updateStunEnabled,
             turnUrl = vm.turnUrl,
             turnUser = vm.turnUser,
             turnCred = vm.turnCred,
